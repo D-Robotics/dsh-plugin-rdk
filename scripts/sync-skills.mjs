@@ -11,6 +11,7 @@
  * Env vars:
  *   RDK_DEVICE_SKILLS_SOURCE / RDK_DEVICE_SKILLS_LOCAL
  *   RDK_SKILLS_SOURCE        / RDK_SKILLS_LOCAL
+ *   BSP_SKILLS_SOURCE        / BSP_SKILLS_LOCAL
  */
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -35,6 +36,13 @@ const SOURCES = [
     localEnv: 'RDK_SKILLS_LOCAL',
     url: 'https://github.com/D-Robotics/rdk-skills.git',
     localFallback: 'D:/20_Dev_Projects/RDK-Skills/rdk-skills',
+  },
+  {
+    pack: 'bsp-skills',
+    env: 'BSP_SKILLS_SOURCE',
+    localEnv: 'BSP_SKILLS_LOCAL',
+    url: 'https://github.com/D-Robotics/bsp-skills.git',
+    localFallback: 'D:/20_Dev_Projects/RDK-Skills/bsp-skills',
   },
 ]
 

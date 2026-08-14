@@ -6,7 +6,7 @@
 
 | Capability | What it does |
 | --- | --- |
-| **Native skill catalog** | Registers the vendored RDK skill packs (`rdk-device-skills` + `rdk-skills`, ~69 skills) into the harness skill registry, so they appear in the session skill catalog and load through the built-in `skill` tool. |
+| **Native skill catalog** | Registers the vendored RDK skill packs (`rdk-device-skills` + `rdk-skills` + `bsp-skills`, ~77 skills) into the harness skill registry, so they appear in the session skill catalog and load through the built-in `skill` tool. |
 | **`rdk_skills` tool** | Model tool to list, search, and inspect the indexed catalog (path, scripts, tags). |
 | **`rdk_board_detect` tool** | Runs the canonical `detect_rdk.sh` to report whether the current host is an RDK board (board / SoC / BPU arch / memory / OS version). |
 
@@ -63,9 +63,10 @@ fabricates data.
 
 The vendored packs are plain copies, so the plugin works offline. Run
 `npm run sync` to re-copy from the upstream repositories (local checkouts
-by default; set `RDK_DEVICE_SKILLS_SOURCE` / `RDK_SKILLS_SOURCE` to paths
-or git URLs). A weekly GitHub Action opens a PR when the upstream packs
-change.
+by default; set `RDK_DEVICE_SKILLS_SOURCE` / `RDK_SKILLS_SOURCE` /
+`BSP_SKILLS_SOURCE` to paths or git URLs). A weekly GitHub Action opens a
+PR when the upstream packs change. New packs are picked up automatically:
+every directory under `skills/` is scanned as a skill pack.
 
 ## Development
 

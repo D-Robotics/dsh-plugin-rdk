@@ -24,6 +24,11 @@ async function buildFixture() {
     await writeFile(join(hub, 'beta', 'SKILL.md'), SKILL('test-beta', 'Beta skill'));
     await mkdir(join(hub, 'oe', 'deep', 'nested'), { recursive: true });
     await writeFile(join(hub, 'oe', 'deep', 'nested', 'SKILL.md'), SKILL('test-oe-nested', 'OE nested skill'));
+    const bsp = join(root, 'bsp-skills');
+    await mkdir(join(bsp, 'bsp-env-setup'), { recursive: true });
+    await writeFile(join(bsp, 'bsp-env-setup', 'SKILL.md'), SKILL('test-bsp-env', 'BSP env skill'));
+    await mkdir(join(bsp, 'bsp-image-build'), { recursive: true });
+    await writeFile(join(bsp, 'bsp-image-build', 'SKILL.md'), SKILL('test-bsp-image', 'BSP image skill'));
     return root;
 }
 test('scans both packs, dedupes by name with device pack winning', async () => {
@@ -33,11 +38,12 @@ test('scans both packs, dedupes by name with device pack winning', async () => {
         if (handle === undefined)
             assert.fail('mountRdkSkills returned undefined');
         const idx = await handle.scanAll(false);
-        assert.deepEqual([...idx.skills.map((s) => s.name)].sort(), ['test-alpha', 'test-beta', 'test-nested', 'test-oe-nested', 'test-shared']);
+        assert.deepEqual([...idx.skills.map((s) => s.name)].sort(), ['test-alpha', 'test-beta', 'test-bsp-env', 'test-bsp-image', 'test-nested', 'test-oe-nested', 'test-shared']);
         assert.equal(idx.byName.get('test-shared')?.description, 'Shared skill from device pack');
         assert.equal(idx.stats.errors.length, 0);
         assert.deepEqual(idx.stats.roots.map((r) => [r.pack, r.found]), [
             ['rdk-device-skills', 3],
+            ['bsp-skills', 2],
             ['rdk-skills', 3],
         ]);
         handle.dispose();
@@ -46,15 +52,15 @@ test('scans both packs, dedupes by name with device pack winning', async () => {
         await rm(root, { recursive: true, force: true });
     }
 });
-test('includeOe: false scans only the device pack', async () => {
+test('includeOe: false drops the OE hub pack but keeps other packs', async () => {
     const root = await buildFixture();
     try {
         const handle = mountRdkSkills(stubCtx(), { skillsDirs: [], includeOe: false, vendorDir: root });
         if (handle === undefined)
             assert.fail('mountRdkSkills returned undefined');
         const idx = await handle.scanAll(false);
-        assert.deepEqual([...idx.skills.map((s) => s.name)].sort(), ['test-alpha', 'test-nested', 'test-shared']);
-        assert.deepEqual(idx.stats.roots.map((r) => r.pack), ['rdk-device-skills']);
+        assert.deepEqual([...idx.skills.map((s) => s.name)].sort(), ['test-alpha', 'test-bsp-env', 'test-bsp-image', 'test-nested', 'test-shared']);
+        assert.deepEqual(idx.stats.roots.map((r) => r.pack), ['rdk-device-skills', 'bsp-skills']);
         handle.dispose();
     }
     finally {

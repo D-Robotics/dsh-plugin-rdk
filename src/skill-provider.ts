@@ -124,6 +124,19 @@ async function isDirectory(path: string): Promise<boolean> {
   }
 }
 
+/** Sorted names of the skill-pack directories directly under a root. */
+async function listVendorPackNames(root: string): Promise<string[]> {
+  try {
+    const entries = await readdir(root, { withFileTypes: true })
+    return entries
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+      .map((entry) => entry.name)
+      .sort()
+  } catch {
+    return []
+  }
+}
+
 async function readTextAt(path: string): Promise<string | undefined> {
   try {
     return await readFile(path, 'utf8')
@@ -172,9 +185,16 @@ async function scan(options: ProviderOptions, index: RdkSkillIndex): Promise<voi
   options.skillsDirs.forEach((dir, i) => {
     roots.push({ pack: `external-${i + 1}`, dir })
   })
-  roots.push({ pack: 'rdk-device-skills', dir: join(vendorDir, 'rdk-device-skills') })
-  if (options.includeOe) {
-    roots.push({ pack: 'rdk-skills', dir: join(vendorDir, 'rdk-skills') })
+
+  // Every directory under the vendor root is a skill pack. Scan order decides
+  // duplicate precedence: device pack first, then any additional packs
+  // (bsp-skills, ...), then the OE hub pack when includeOe is enabled.
+  const vendorPackNames = await listVendorPackNames(vendorDir)
+  const device = vendorPackNames.filter((n) => n === 'rdk-device-skills')
+  const hub = vendorPackNames.filter((n) => n === 'rdk-skills')
+  const others = vendorPackNames.filter((n) => n !== 'rdk-device-skills' && n !== 'rdk-skills')
+  for (const pack of [...device, ...others, ...(options.includeOe ? hub : [])]) {
+    roots.push({ pack, dir: join(vendorDir, pack) })
   }
 
   const stats: ScanRootStats[] = []

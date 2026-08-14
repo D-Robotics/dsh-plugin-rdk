@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T08:45:47.294Z",
+  "generatedAt": "2026-08-14T09:04:25.262Z",
   "packs": [
     {
       "pack": "rdk-device-skills",
@@ -10,8 +10,14 @@
     {
       "pack": "rdk-skills",
       "source": "D:/20_Dev_Projects/RDK-Skills/rdk-skills",
-      "commit": "fbff67c49b055b4141d73c1672b6d8968d539f67",
+      "commit": "5aa0be67255fb971d76d10bf63fc8168721f6fbf",
       "topLevelEntries": 32
+    },
+    {
+      "pack": "bsp-skills",
+      "source": "D:/20_Dev_Projects/RDK-Skills/bsp-skills",
+      "commit": "fdd46294570619de941b6b0b8ad7d34f10ef4c52",
+      "topLevelEntries": 11
     }
   ]
 }

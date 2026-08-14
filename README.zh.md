@@ -6,7 +6,7 @@
 
 | 能力 | 说明 |
 | --- | --- |
-| **原生技能目录** | 将内置（vendored）的 RDK 技能包（`rdk-device-skills` + `rdk-skills`，约 69 个技能）注册进 harness 技能注册表：它们会出现在会话技能目录中，并可通过内置 `skill` 工具直接加载。 |
+| **原生技能目录** | 将内置（vendored）的 RDK 技能包（`rdk-device-skills` + `rdk-skills` + `bsp-skills`，约 77 个技能）注册进 harness 技能注册表：它们会出现在会话技能目录中，并可通过内置 `skill` 工具直接加载。 |
 | **`rdk_skills` 工具** | 供模型调用的目录工具：全量列表、关键词搜索、精确技能详情（路径、脚本、标签）。 |
 | **`rdk_board_detect` 工具** | 运行官方 `detect_rdk.sh`，判断当前主机是否为 RDK 板卡（板卡 / SoC / BPU 架构 / 内存 / 系统版本）。 |
 
@@ -62,8 +62,9 @@ dsh plugin --profile <name> add github:<owner>/dsh-plugin-rdk
 
 内置技能是普通文件副本，因此插件离线可用。运行 `npm run sync` 从上游仓库
 重新同步（默认使用本地 checkout；可通过 `RDK_DEVICE_SKILLS_SOURCE` /
-`RDK_SKILLS_SOURCE` 指定路径或 git URL）。GitHub Action 每周检查上游
-变化并自动开 PR。
+`RDK_SKILLS_SOURCE` / `BSP_SKILLS_SOURCE` 指定路径或 git URL）。GitHub
+Action 每周检查上游变化并自动开 PR。新增技能包无需改代码：`skills/`
+下的每个目录都会自动被当作一个技能包扫描。
 
 ## 开发
 

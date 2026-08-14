@@ -16,6 +16,8 @@ RDK skill packs:
   <https://github.com/D-Robotics/rdk-device-skills>
 - `skills/rdk-skills/` — from
   <https://github.com/D-Robotics/rdk-skills>
+- `skills/bsp-skills/` — from
+  <https://github.com/D-Robotics/bsp-skills>
 
 Skill content is Copyright (c) D-Robotics and its contributors and is
 distributed under the Apache-2.0 and CC-BY-4.0 licenses of the upstream
