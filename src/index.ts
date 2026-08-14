@@ -29,7 +29,7 @@ export const Config: Schema<Config> = Schema.object({
   detectScript: Schema.string(),
 })
 
-export const inject = ['skills']
+export const inject = ['skills', 'tools']
 
 export function apply(ctx: Context, config: Config): void {
   const handle = mountRdkSkills(ctx, {

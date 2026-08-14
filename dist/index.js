@@ -7,7 +7,7 @@ export const Config = Schema.object({
     includeOe: Schema.boolean().default(true),
     detectScript: Schema.string(),
 });
-export const inject = ['skills'];
+export const inject = ['skills', 'tools'];
 export function apply(ctx, config) {
     const handle = mountRdkSkills(ctx, {
         skillsDirs: config.skillsDirs ?? [],
