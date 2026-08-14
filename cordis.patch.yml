@@ -1,0 +1,9 @@
+# dsh-plugin-rdk bundle patch: insert the RDK skills adapter plugin row.
+# Users may override this row's config in their profile's cordis.patch.yml.
+- insert:
+    - id: rdk-skills
+      name: dsh-plugin-rdk
+      # config:
+      #   skillsDirs: []        # extra skill directories to scan (they win over vendored skills)
+      #   includeOe: true       # include the OE / X5 / S-series toolchain skills from rdk-skills
+      #   detectScript: null    # custom board-detection script (defaults to the vendored detect_rdk.sh)

@@ -1,0 +1,235 @@
+/**
+ * The `rdk-skills` provider: registers every skill found in the configured
+ * directories (vendored packs first, user `skillsDirs` on top) into the
+ * harness-native `ctx.skills` registry so they appear in the session skill
+ * catalog and load through the built-in `skill` tool.
+ */
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseSkillMarkdown } from './frontmatter.js';
+export const PROVIDER_NAME = 'rdk-skills';
+export const DEFAULT_RANK = 300;
+export const defaultVendorDir = () => fileURLToPath(new URL('../skills', import.meta.url));
+function stamp() {
+    return new Date().toISOString();
+}
+async function isDirectory(path) {
+    try {
+        return (await stat(path)).isDirectory();
+    }
+    catch {
+        return false;
+    }
+}
+async function readTextAt(path) {
+    try {
+        return await readFile(path, 'utf8');
+    }
+    catch {
+        return undefined;
+    }
+}
+async function walk(dir, depth, pack, out) {
+    if (depth > 6)
+        return;
+    let entries;
+    try {
+        entries = await readdir(dir, { withFileTypes: true });
+    }
+    catch (error) {
+        out.errors.push(`${dir}: ${error.message}`);
+        return;
+    }
+    for (const entry of entries) {
+        if (!entry.isDirectory())
+            continue;
+        if (entry.name.startsWith('.') || entry.name === 'node_modules')
+            continue;
+        const childDir = join(dir, entry.name);
+        const mdPath = join(childDir, 'SKILL.md');
+        const md = await readTextAt(mdPath);
+        if (md !== undefined) {
+            const parsed = parseSkillMarkdown(md);
+            if (parsed !== undefined && !out.byName.has(parsed.name)) {
+                const skill = { ...parsed, pack, dir: childDir, path: mdPath };
+                out.byName.set(parsed.name, skill);
+                out.skills.push(skill);
+            }
+        }
+        await walk(childDir, depth + 1, pack, out);
+    }
+}
+async function scan(options, index) {
+    const vendorDir = options.vendorDir ?? defaultVendorDir();
+    const roots = [];
+    options.skillsDirs.forEach((dir, i) => {
+        roots.push({ pack: `external-${i + 1}`, dir });
+    });
+    roots.push({ pack: 'rdk-device-skills', dir: join(vendorDir, 'rdk-device-skills') });
+    if (options.includeOe) {
+        roots.push({ pack: 'rdk-skills', dir: join(vendorDir, 'rdk-skills') });
+    }
+    const stats = [];
+    for (const root of roots) {
+        const local = { skills: [], byName: new Map(), errors: [] };
+        if (await isDirectory(root.dir)) {
+            await walk(root.dir, 0, root.pack, local);
+        }
+        else {
+            local.errors.push(`${root.dir}: directory not found`);
+        }
+        for (const skill of local.skills) {
+            if (!index.byName.has(skill.name)) {
+                index.byName.set(skill.name, skill);
+                index.skills.push(skill);
+            }
+        }
+        index.stats.errors.push(...local.errors);
+        stats.push({ pack: root.pack, dir: root.dir, found: local.skills.length });
+    }
+    index.stats.roots = stats;
+    index.scannedAt = stamp();
+}
+function candidateOf(skill) {
+    return {
+        name: skill.name,
+        description: skill.description,
+        ...(skill.whenToUse !== undefined ? { whenToUse: skill.whenToUse } : {}),
+        invocation: { modelInvocable: true, userInvocable: true },
+        source: 'custom',
+        provider: PROVIDER_NAME,
+        rank: DEFAULT_RANK,
+        locator: { path: skill.path, dir: skill.dir, pack: skill.pack },
+        path: skill.path,
+        metadata: {
+            ...(skill.version !== undefined ? { version: skill.version } : {}),
+            ...(skill.tags.length > 0 ? { tags: skill.tags } : {}),
+            pack: skill.pack,
+        },
+    };
+}
+/**
+ * Mount the skill provider + index for this plugin. Returns a handle the tool
+ * layer uses, or `undefined` when the skills service is unavailable.
+ */
+export function mountRdkSkills(ctx, options) {
+    if (ctx.skills === undefined)
+        return undefined;
+    const index = { skills: [], byName: new Map(), stats: { roots: [], errors: [] }, scannedAt: null };
+    let scanPromise = null;
+    const scanAll = (force) => {
+        if (force) {
+            index.skills = [];
+            index.byName = new Map();
+            index.stats = { roots: [], errors: [] };
+            index.scannedAt = null;
+            scanPromise = null;
+        }
+        if (index.scannedAt !== null)
+            return Promise.resolve(index);
+        if (scanPromise === null) {
+            scanPromise = scan(options, index).finally(() => {
+                scanPromise = null;
+            });
+        }
+        return scanPromise.then(() => index);
+    };
+    const dispose = ctx.skills.registerProvider((control) => ({
+        name: PROVIDER_NAME,
+        async list() {
+            await scanAll(false);
+            return index.skills.map(candidateOf);
+        },
+        async get(candidate) {
+            const locator = candidate.locator;
+            if (locator === undefined || typeof locator.path !== 'string')
+                return undefined;
+            const raw = await readTextAt(locator.path);
+            if (raw === undefined)
+                return undefined;
+            const parsed = parseSkillMarkdown(raw);
+            if (parsed === undefined)
+                return undefined;
+            return {
+                name: parsed.name,
+                description: parsed.description,
+                ...(parsed.whenToUse !== undefined ? { whenToUse: parsed.whenToUse } : {}),
+                invocation: { modelInvocable: true, userInvocable: true },
+                source: 'custom',
+                provider: PROVIDER_NAME,
+                resourceBase: { kind: 'directory', path: typeof locator.dir === 'string' ? locator.dir : dirname(locator.path) },
+                path: locator.path,
+                metadata: {
+                    ...(parsed.version !== undefined ? { version: parsed.version } : {}),
+                    ...(parsed.tags.length > 0 ? { tags: parsed.tags } : {}),
+                    pack: typeof locator.pack === 'string' ? locator.pack : 'rdk',
+                },
+                content: parsed.body,
+            };
+        },
+    }));
+    const pick = (skill) => ({
+        name: skill.name,
+        description: skill.description,
+        pack: skill.pack,
+        ...(skill.version !== undefined ? { version: skill.version } : {}),
+        ...(skill.tags.length > 0 ? { tags: skill.tags } : {}),
+        dir: skill.dir,
+    });
+    const listSkillFiles = async (dir) => {
+        const result = { files: [], scripts: [] };
+        try {
+            const entries = await readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isFile() && /\.(sh|py|md|json|ya?ml)$/i.test(entry.name))
+                    result.files.push(entry.name);
+            }
+        }
+        catch {
+            /* skill dir may be gone */
+        }
+        try {
+            const entries = await readdir(join(dir, 'scripts'), { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isFile())
+                    result.scripts.push(`scripts/${entry.name}`);
+            }
+        }
+        catch {
+            /* no scripts dir */
+        }
+        return result;
+    };
+    return {
+        scanAll,
+        dispose,
+        listSkillFiles,
+        async summary() {
+            const idx = await scanAll(false);
+            return {
+                provider: PROVIDER_NAME,
+                scannedAt: idx.scannedAt,
+                count: idx.skills.length,
+                roots: idx.stats.roots,
+                errors: idx.stats.errors.slice(0, 20),
+                skills: idx.skills.map(pick),
+            };
+        },
+        async detail(name) {
+            const idx = await scanAll(false);
+            const skill = idx.byName.get(name);
+            if (skill === undefined)
+                return { error: `unknown skill: ${name}` };
+            const files = await listSkillFiles(skill.dir);
+            return {
+                ...pick(skill),
+                path: skill.path,
+                files: files.files,
+                scripts: files.scripts,
+                ...(skill.whenToUse !== undefined ? { whenToUse: skill.whenToUse } : {}),
+            };
+        },
+    };
+}
+//# sourceMappingURL=skill-provider.js.map

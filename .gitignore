@@ -1,0 +1,6 @@
+node_modules/
+*.tsbuildinfo
+.sync-tmp/
+npm-debug.log*
+# dist/ is intentionally committed: git-installed bundles must work without a build step.
+# `npm run build` refreshes it before npm publish (prepublishOnly).

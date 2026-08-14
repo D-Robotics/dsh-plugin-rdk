@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-08-14T08:45:47.294Z",
+  "packs": [
+    {
+      "pack": "rdk-device-skills",
+      "source": "D:/20_Dev_Projects/RDK-Skills/rdk-device-skills",
+      "commit": "4c7e245f9f1cc36e3954630158112e09246d5cc9",
+      "topLevelEntries": 29
+    },
+    {
+      "pack": "rdk-skills",
+      "source": "D:/20_Dev_Projects/RDK-Skills/rdk-skills",
+      "commit": "fbff67c49b055b4141d73c1672b6d8968d539f67",
+      "topLevelEntries": 32
+    }
+  ]
+}

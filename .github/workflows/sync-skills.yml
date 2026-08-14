@@ -1,0 +1,35 @@
+name: sync-skills
+on:
+  schedule:
+    - cron: '17 3 * * 1' # weekly, Monday 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sync vendored skills from upstream packs
+        env:
+          RDK_DEVICE_SKILLS_SOURCE: https://github.com/D-Robotics/rdk-device-skills.git
+          RDK_SKILLS_SOURCE: https://github.com/D-Robotics/rdk-skills.git
+        run: node scripts/sync-skills.mjs
+      - name: Create pull request when the vendor tree changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore(skills): sync vendored RDK skill packs'
+          branch: chore/sync-skills
+          title: 'chore(skills): sync vendored RDK skill packs'
+          body: |
+            Automated weekly sync of `skills/rdk-device-skills` and
+            `skills/rdk-skills` from the upstream repositories.
+
+            See `skills/manifest.json` for the exact source commits.
+          delete-branch: true

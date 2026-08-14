@@ -1,0 +1,68 @@
+{
+  "name": "dsh-plugin-rdk",
+  "version": "0.1.0",
+  "description": "D-Robotics RDK (地瓜机器人) integration for DeepSeek Harness: native RDK skill catalog, rdk_skills browser tool, and rdk_board_detect device detection.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "skills",
+    "scripts",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "NOTICE.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "sync": "node scripts/sync-skills.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "yaml": "^2.9.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "rdk",
+    "d-robotics",
+    "horizon-robotics",
+    "bpu",
+    "edge-ai",
+    "skills",
+    "x3",
+    "x5",
+    "ultra",
+    "s100",
+    "s600"
+  ],
+  "license": "Apache-2.0"
+}
