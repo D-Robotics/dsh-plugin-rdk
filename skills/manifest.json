@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T09:04:25.262Z",
+  "generatedAt": "2026-08-14T09:36:16.277Z",
   "packs": [
     {
       "pack": "rdk-device-skills",
@@ -18,6 +18,18 @@
       "source": "D:/20_Dev_Projects/RDK-Skills/bsp-skills",
       "commit": "fdd46294570619de941b6b0b8ad7d34f10ef4c52",
       "topLevelEntries": 11
+    },
+    {
+      "pack": "oe-skills-x5",
+      "source": "D:/20_Dev_Projects/RDK-Skills/oe-skills-x5",
+      "commit": "27718beb220764aaf80dbc9f6812642e1131c192",
+      "topLevelEntries": 24
+    },
+    {
+      "pack": "oe-skills-s",
+      "source": "D:/20_Dev_Projects/RDK-Skills/oe-skills-s",
+      "commit": "bb0905899d69a35f8179f6cf8dd343ffdd94d5c6",
+      "topLevelEntries": 7
     }
   ]
 }

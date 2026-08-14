@@ -6,19 +6,26 @@ export const Config = Schema.object({
     skillsDirs: Schema.array(Schema.string()).default([]),
     includeOe: Schema.boolean().default(true),
     detectScript: Schema.string(),
+    oeX5Source: Schema.string(),
+    oeSSource: Schema.string(),
 });
-export const inject = ['skills', 'tools'];
 export function apply(ctx, config) {
-    const handle = mountRdkSkills(ctx, {
+    const skills = ctx.get('skills');
+    const tools = ctx.get('tools');
+    if (skills === undefined || tools === undefined) {
+        return;
+    }
+    const handle = mountRdkSkills(skills, {
         skillsDirs: config.skillsDirs ?? [],
         includeOe: config.includeOe ?? true,
     });
-    if (handle === undefined) {
-        ctx.logger?.warn?.('dsh-plugin-rdk: skills service unavailable; RDK skills were not registered');
-        return;
-    }
-    registerTools(ctx, handle, config.detectScript);
+    registerTools(tools, handle, {
+        detectScript: config.detectScript,
+        oeX5Source: config.oeX5Source,
+        oeSSource: config.oeSSource,
+    });
 }
 export { parseDetectOutput, runDeviceDetect } from './device-detect.js';
+export { runOeSetup, OE_PACKS } from './oe-setup.js';
 export { mountRdkSkills, PROVIDER_NAME } from './skill-provider.js';
 //# sourceMappingURL=index.js.map

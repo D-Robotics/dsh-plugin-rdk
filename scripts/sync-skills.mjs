@@ -44,6 +44,22 @@ const SOURCES = [
     url: 'https://github.com/D-Robotics/bsp-skills.git',
     localFallback: 'D:/20_Dev_Projects/RDK-Skills/bsp-skills',
   },
+  {
+    pack: 'oe-skills-x5',
+    env: 'OE_X5_SKILLS_SOURCE',
+    localEnv: 'OE_X5_SKILLS_LOCAL',
+    url: 'https://github.com/D-Robotics/oe-skills-x5.git',
+    localFallback: 'D:/20_Dev_Projects/RDK-Skills/oe-skills-x5',
+    skillsPath: 'x5/skills',
+  },
+  {
+    pack: 'oe-skills-s',
+    env: 'OE_S_SKILLS_SOURCE',
+    localEnv: 'OE_S_SKILLS_LOCAL',
+    url: 'https://github.com/D-Robotics/oe-skills-s.git',
+    localFallback: 'D:/20_Dev_Projects/RDK-Skills/oe-skills-s',
+    skillsPath: 'horizon/skills',
+  },
 ]
 
 const isGitUrl = (value) => /^(https?:\/\/|git@|ssh:\/\/|git:\/\/)/.test(value)
@@ -61,13 +77,14 @@ function gitHead(path) {
   }
 }
 
-function copySkillsFrom(sourcePath, pack) {
-  const dest = join(vendorDir, pack)
+function copySkillsFrom(sourcePath, source) {
+  const dest = join(vendorDir, source.pack)
   rmSync(dest, { recursive: true, force: true })
   mkdirSync(dest, { recursive: true })
 
-  const skillsDir = join(sourcePath, 'skills')
-  if (!existsSync(skillsDir)) throw new Error(`${sourcePath} has no skills/ directory`)
+  const skillsRel = source.skillsPath ?? 'skills'
+  const skillsDir = join(sourcePath, skillsRel)
+  if (!existsSync(skillsDir)) throw new Error(`${sourcePath} has no ${skillsRel} directory`)
   cpSync(skillsDir, dest, {
     recursive: true,
     filter: (src) => {
@@ -112,7 +129,7 @@ function main() {
   for (const source of SOURCES) {
     console.log(`[sync] ${source.pack} ...`)
     const resolved = resolveSource(source)
-    const dest = copySkillsFrom(resolved.path, source.pack)
+    const dest = copySkillsFrom(resolved.path, source)
     const skillCount = readdirSync(dest).length
     manifest.packs.push({
       pack: source.pack,

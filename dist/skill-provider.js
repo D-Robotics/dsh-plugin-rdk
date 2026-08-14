@@ -43,7 +43,7 @@ async function readTextAt(path) {
         return undefined;
     }
 }
-async function walk(dir, depth, pack, out) {
+async function walk(dir, depth, pack, out, skipDirs) {
     if (depth > 6)
         return;
     let entries;
@@ -59,6 +59,8 @@ async function walk(dir, depth, pack, out) {
             continue;
         if (entry.name.startsWith('.') || entry.name === 'node_modules')
             continue;
+        if (skipDirs !== undefined && skipDirs.has(entry.name))
+            continue;
         const childDir = join(dir, entry.name);
         const mdPath = join(childDir, 'SKILL.md');
         const md = await readTextAt(mdPath);
@@ -70,9 +72,11 @@ async function walk(dir, depth, pack, out) {
                 out.skills.push(skill);
             }
         }
-        await walk(childDir, depth + 1, pack, out);
+        await walk(childDir, depth + 1, pack, out, skipDirs);
     }
 }
+/** The OE packs are their own upstream repos; the hub merely mirrors them. */
+const isOePack = (name) => name === 'oe-skills-x5' || name === 'oe-skills-s';
 async function scan(options, index) {
     const vendorDir = options.vendorDir ?? defaultVendorDir();
     const roots = [];
@@ -80,20 +84,32 @@ async function scan(options, index) {
         roots.push({ pack: `external-${i + 1}`, dir });
     });
     // Every directory under the vendor root is a skill pack. Scan order decides
-    // duplicate precedence: device pack first, then any additional packs
-    // (bsp-skills, ...), then the OE hub pack when includeOe is enabled.
+    // duplicate precedence: device pack first, then additional packs
+    // (bsp-skills, ...), then the dedicated OE packs (gated by includeOe), and
+    // the hub last so its mirrors of any pack lose to the dedicated source.
     const vendorPackNames = await listVendorPackNames(vendorDir);
     const device = vendorPackNames.filter((n) => n === 'rdk-device-skills');
     const hub = vendorPackNames.filter((n) => n === 'rdk-skills');
-    const others = vendorPackNames.filter((n) => n !== 'rdk-device-skills' && n !== 'rdk-skills');
-    for (const pack of [...device, ...others, ...(options.includeOe ? hub : [])]) {
-        roots.push({ pack, dir: join(vendorDir, pack) });
+    const oe = vendorPackNames.filter(isOePack);
+    const others = vendorPackNames.filter((n) => n !== 'rdk-device-skills' && n !== 'rdk-skills' && !isOePack(n));
+    const oePresent = new Set(oe);
+    const hubSkip = new Set();
+    if (!options.includeOe || oePresent.has('oe-skills-x5'))
+        hubSkip.add('oe-skills-x5');
+    if (!options.includeOe || oePresent.has('oe-skills-s'))
+        hubSkip.add('oe-skills-s');
+    for (const pack of [...device, ...others, ...(options.includeOe ? oe : []), ...hub]) {
+        roots.push({
+            pack,
+            dir: join(vendorDir, pack),
+            ...(pack === 'rdk-skills' && hubSkip.size > 0 ? { skipDirs: hubSkip } : {}),
+        });
     }
     const stats = [];
     for (const root of roots) {
         const local = { skills: [], byName: new Map(), errors: [] };
         if (await isDirectory(root.dir)) {
-            await walk(root.dir, 0, root.pack, local);
+            await walk(root.dir, 0, root.pack, local, root.skipDirs);
         }
         else {
             local.errors.push(`${root.dir}: directory not found`);
@@ -132,9 +148,7 @@ function candidateOf(skill) {
  * Mount the skill provider + index for this plugin. Returns a handle the tool
  * layer uses, or `undefined` when the skills service is unavailable.
  */
-export function mountRdkSkills(ctx, options) {
-    if (ctx.skills === undefined)
-        return undefined;
+export function mountRdkSkills(skills, options) {
     const index = { skills: [], byName: new Map(), stats: { roots: [], errors: [] }, scannedAt: null };
     let scanPromise = null;
     const scanAll = (force) => {
@@ -154,7 +168,7 @@ export function mountRdkSkills(ctx, options) {
         }
         return scanPromise.then(() => index);
     };
-    const dispose = ctx.skills.registerProvider((control) => ({
+    const dispose = skills.registerProvider((control) => ({
         name: PROVIDER_NAME,
         async list() {
             await scanAll(false);

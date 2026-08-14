@@ -1,4 +1,3 @@
-import type { Context } from '@deepseek-ai/cordis';
 export declare const PROVIDER_NAME = "rdk-skills";
 export declare const DEFAULT_RANK = 300;
 export interface IndexedSkill {
@@ -29,7 +28,7 @@ export interface RdkSkillIndex {
 export interface ProviderOptions {
     /** Extra skill directories scanned BEFORE the vendored packs (they win duplicates). */
     skillsDirs: string[];
-    /** Include the OE / X5 / S-series toolchain skills vendored from rdk-skills. */
+    /** Include the OpenExplorer toolchain packs (oe-skills-x5 / oe-skills-s). */
     includeOe: boolean;
     /** Override the vendored skills root (mainly for tests). */
     vendorDir?: string;
@@ -89,17 +88,14 @@ interface SkillProvider {
     }>;
     get(candidate: SkillCandidate, options: SkillLookupOptions): Promise<SkillDefinition | undefined>;
 }
-declare module '@deepseek-ai/cordis' {
-    interface Context {
-        skills?: {
-            registerProvider(create: (control: SkillProviderControl) => SkillProvider): () => void;
-        };
-    }
+/** The part of the DSH skills registry this plugin consumes. */
+export interface SkillsRegistryView {
+    registerProvider(create: (control: SkillProviderControl) => SkillProvider): () => void;
 }
 export declare const defaultVendorDir: () => string;
 /**
  * Mount the skill provider + index for this plugin. Returns a handle the tool
  * layer uses, or `undefined` when the skills service is unavailable.
  */
-export declare function mountRdkSkills(ctx: Context, options: ProviderOptions): RdkSkillsHandle | undefined;
+export declare function mountRdkSkills(skills: SkillsRegistryView, options: ProviderOptions): RdkSkillsHandle;
 export {};

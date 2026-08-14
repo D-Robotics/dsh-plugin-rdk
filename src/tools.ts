@@ -2,10 +2,11 @@
  * Model-facing tools contributed by dsh-plugin-rdk:
  *  - `rdk_skills`: browse / search the indexed RDK skill catalog.
  *  - `rdk_board_detect`: detect whether the current host is an RDK board.
+ *  - `rdk_oe_setup`: run the official OE pack setup.sh into a project workspace.
  */
-import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { Context } from '@deepseek-ai/cordis'
+import { defineTool, type ToolDefinition } from '@deepseek-ai/dsh-tools'
 import { runDeviceDetect } from './device-detect.js'
+import { runOeSetup } from './oe-setup.js'
 import type { RdkSkillsHandle } from './skill-provider.js'
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
@@ -13,11 +14,26 @@ type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string
 /** JSON round-trip mirrors the harness cloneJson semantics: plain data only, undefined fields dropped. */
 const toJson = (value: unknown): JsonValue => JSON.parse(JSON.stringify(value)) as JsonValue
 
-export function registerTools(ctx: Context, handle: RdkSkillsHandle, detectScript?: string): void {
-  ctx.tools.register(defineTool({
+/** The part of the DSH tools registry this plugin consumes. */
+export interface ToolsRegistryView {
+  register(definition: ToolDefinition): () => void
+}
+
+export interface OeSetupOptions {
+  detectScript?: string
+  oeX5Source?: string
+  oeSSource?: string
+}
+
+export function registerTools(tools: ToolsRegistryView, handle: RdkSkillsHandle, opts?: OeSetupOptions): void {
+  const detectScript = opts?.detectScript
+  const oeX5Source = opts?.oeX5Source
+  const oeSSource = opts?.oeSSource
+
+  tools.register(defineTool({
     name: 'rdk_skills',
     description:
-      'Browse the local D-Robotics RDK skill catalog indexed by the dsh-plugin-rdk adapter (rdk-device-skills and rdk-skills packs). Call without a query to list every indexed skill; pass a keyword to search by name, description, or tag; pass an exact skill name (e.g. rdk-diagnostic) to get that skill detail with its file layout and scripts. Use when the user mentions RDK (地瓜机器人 / D-Robotics) boards, X3/X5/Ultra/S100/S600, BPU, HB DNN model deployment, TROS, or asks which RDK skills exist. Do not use it to modify skill files — read or edit them with the returned paths.',
+      'Browse the local D-Robotics RDK skill catalog indexed by the dsh-plugin-rdk adapter (rdk-device-skills, bsp-skills, oe-skills-x5, oe-skills-s, and rdk-skills hub packs). Call without a query to list every indexed skill; pass a keyword to search by name, description, or tag; pass an exact skill name (e.g. rdk-diagnostic) to get that skill detail with its file layout and scripts. Use when the user mentions RDK (地瓜机器人 / D-Robotics) boards, X3/X5/Ultra/S100/S600, BPU, HB DNN model deployment, TROS, or asks which RDK skills exist. Do not use it to modify skill files — read or edit them with the returned paths.',
     parameters: {
       query: {
         type: 'string',
@@ -60,7 +76,7 @@ export function registerTools(ctx: Context, handle: RdkSkillsHandle, detectScrip
     },
   }))
 
-  ctx.tools.register(defineTool({
+  tools.register(defineTool({
     name: 'rdk_board_detect',
     description:
       'Detect whether the host running DeepSeek Harness is a D-Robotics RDK board, using the canonical detect_rdk.sh from the vendored rdk-diagnostic skill. Returns board / SoC / BPU architecture / memory / OS version fields, or { detected: false, reason } when the host is not an RDK board (or bash is unavailable). Use when the user asks which RDK board this is or whether this environment can run RDK device-side workflows. Read-only: it never changes board settings.',
@@ -71,6 +87,40 @@ export function registerTools(ctx: Context, handle: RdkSkillsHandle, detectScrip
     },
     async execute() {
       return toJson(await runDeviceDetect(detectScript))
+    },
+  }))
+
+  tools.register(defineTool({
+    name: 'rdk_oe_setup',
+    description:
+      'Install a D-Robotics OpenExplorer (OE) toolchain pack into a project workspace — exactly like the official repos do. Clones (or uses the given local checkout of) the pack repository and runs its own setup.sh against the project root. For oe-skills-x5 this lays down .drobotics/ and injects the "X5 Workspace Rules" routing block into CLAUDE.md / AGENTS.md; for oe-skills-s it lays down .horizon/ with the Horizon routing rules. DeepSeek Harness reads the workspace CLAUDE.md, so the routing rules take effect for the agent. Only run this after the user confirms the target project root — setup.sh writes files into it.',
+    parameters: {
+      pack: {
+        type: 'string',
+        required: true,
+        enum: ['oe-skills-x5', 'oe-skills-s'],
+        description: 'Which OE pack to install.',
+      },
+      projectRoot: {
+        type: 'string',
+        required: true,
+        description: 'Absolute path of the project workspace to initialize (setup.sh <projectRoot>).',
+      },
+      source: {
+        type: 'string',
+        description: 'Optional git URL or local checkout path of the pack repo; defaults to the official GitHub repository.',
+      },
+    },
+    output: {
+      schema: { type: 'json' },
+      render: (_args, value) => [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
+    },
+    async execute(args) {
+      return toJson(await runOeSetup({
+        pack: args.pack,
+        projectRoot: args.projectRoot,
+        source: args.source ?? (args.pack === 'oe-skills-x5' ? oeX5Source : oeSSource),
+      }))
     },
   }))
 }
