@@ -5,185 +5,199 @@
 <p align="center">
   <a href="https://github.com/D-Robotics/dsh-plugin-rdk/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/D-Robotics/dsh-plugin-rdk?style=flat-square&color=1D9E75"></a>
   <a href="https://github.com/D-Robotics/dsh-plugin-rdk/actions/workflows/test.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/D-Robotics/dsh-plugin-rdk/test.yml?branch=master&style=flat-square"></a>
-  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat-square"></a>
-  <a href="https://github.com/topics/dsh-plugin"><img alt="GitHub topic: dsh-plugin" src="https://img.shields.io/badge/topic-dsh--plugin-1D9E75?style=flat-square"></a>
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square"></a>
+  <a href="https://github.com/topics/dsh-plugin"><img alt="topic" src="https://img.shields.io/badge/topic-dsh--plugin-1D9E75?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <b>D-Robotics RDK（地瓜机器人）的 DeepSeek Harness 原生适配插件</b><br/>
-  装上它，你的 DSH 会话就「懂」RDK 了 —— 77 个官方技能开箱即用。
-  <br/><br/>
-  <a href="README.zh.md">📖 中文文档</a> ·
-  <a href="#-quick-start">🚀 快速开始</a> ·
-  <a href="#-tools">🛠 工具</a> ·
-  <a href="#-configuration">⚙️ 配置</a> ·
-  <a href="https://github.com/topics/dsh-plugin">🌐 dsh-plugin 生态</a>
+  <strong>D-Robotics RDK &middot; DeepSeek Harness</strong><br/>
+  <sub>Native skill catalog, catalog tools, and workspace integration for the RDK ecosystem.<br/>
+  <a href="README.zh.md">中文文档</a> &middot;
+  <a href="#installation">Installation</a> &middot;
+  <a href="#tools">Tools</a> &middot;
+  <a href="#configuration">Configuration</a> &middot;
+  <a href="https://github.com/topics/dsh-plugin">dsh-plugin ecosystem</a></sub>
 </p>
 
 ---
 
-## ✨ 能做什么
+## Overview
 
-| | 能力 | 说明 |
+`dsh-plugin-rdk` is a [DeepSeek Harness bundle plugin](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md) that adapts the D-Robotics RDK skill ecosystem into the harness natively. It registers five vendored skill packs into the harness skills registry, provides model-facing tools for browsing the catalog and detecting RDK hardware, and can install the OpenExplorer (OE) toolchain packs into a project workspace with the same `setup.sh` flow as the official repositories.
+
+The five skill packs, last synced at commit `b0fb913`:
+
+| Pack | Count | Contents |
 | --- | --- | --- |
-| 🧠 | **原生技能目录** | 把 3 个官方技能包（77 个技能）注册进 harness 技能注册表 —— 它们会出现在会话技能目录里，模型用内置 `skill` 工具即可随时加载完整操作指南 |
-| 🔎 | **`rdk_skills` 工具** | 给模型的目录工具：全量列表 / 关键词搜索 / 精确技能详情（路径、脚本、标签） |
-| 🛰 | **`rdk_board_detect` 工具** | 运行官方 `detect_rdk.sh`，判断当前主机是不是 RDK 板卡（型号 / SoC / BPU 架构 / 内存 / 系统版本） |
-| 📦 | **离线即用** | 技能内容随 npm 包分发，装完就能用，不依赖网络 |
-| 🔄 | **自动同步** | 每周 GitHub Action 检查上游技能包变化并自动开 PR；新增技能包**零代码改动**（`skills/` 下每个目录自动被当作技能包扫描） |
-| 🎛 | **可配置** | 外部技能目录（覆盖内置）、OE 工具链开关、自定义检测脚本 |
+| `rdk-device-skills` | 26 | Board diagnostics, camera, model deployment, GPIO, TROS, headless, memory audit, log forensics, LLM, embodied AI, and more |
+| `bsp-skills` | 8 | Host-side BSP development: cross-compilation, repo sync, kernel/DTB/driver builds, deb packaging, bootloader, rootfs customization |
+| `oe-skills-x5` | 22 | X5 OE Mapper quantization (PTQ/QAT), compilation, runtime inference, performance and accuracy diagnostics |
+| `oe-skills-s` | 20 | S-series HBDK compilation, UCP inference, Perfetto trace analysis, plugin chain debugging, precision tuning |
+| `rdk-skills` (hub) | 1 | The `d-robotics-pack-installer` hub-native skill; its mirrors of the other packs are skipped in favour of the dedicated sources |
 
-## 🚀 快速开始
+Duplicate names are resolved by scan order: device pack first, then BSP, then the dedicated OE packs, and the hub last. External directories configured in `skillsDirs` are scanned before everything and win every conflict.
+
+## Installation
 
 ```bash
-# 从 npm 安装（发布后）
 dsh plugin --profile rdk add dsh-plugin-rdk
-
-# 或从 GitHub 直接安装
-dsh plugin --profile rdk add github:D-Robotics/dsh-plugin-rdk
-
-# 启动
 dsh --profile rdk
 ```
 
-装好之后直接对话：
+Once installed, an agent can ask for any RDK capability directly:
 
 ```text
-You: 有哪些 RDK 技能可以用？
-AI:  (调用 rdk_skills) 当前索引了 77 个技能 ——
-     26 个设备技能（诊断/摄像头/模型部署/GPIO/TROS…）、
-     8 个 BSP 技能（镜像/内核/uboot/rootfs 构建…）、
-     43 个 OE 工具链技能（X5 PTQ/QAT、S 系列 UCP/HBDK…）。
+> 有哪些 RDK 技能可以用？
+  (rdk_skills)  77 skills across 5 packs. 26 device, 8 BSP, 22 X5, 20 S-series, 1 hub.
 
-You: 诊断一下我的 X5 板为什么发烫
-AI:  (加载 rdk-diagnostic 技能) 我来跑一下 snapshot.sh 采集温度、BPU 占用和内存快照…
+> 诊断一下 X5 板为什么发烫
+  (loads rdk-diagnostic)  Running snapshot.sh — CPU 46°C, BPU 48°C, BPU core 0 at 37%...
 
-You: 这台机器是 RDK 板吗？
-AI:  (调用 rdk_board_detect) 是的：rdk-x5 / sunrise-5 / bayes-e / 4GB。
+> 这台机器是 RDK 板吗？
+  (rdk_board_detect)  Yes: rdk-x5 / sunrise-5 / bayes-e / 4 GB.
 ```
 
-## 🧩 内置技能包
-
-| 包 | 技能数 | 内容 | 上游仓库 |
-| --- | --- | --- | --- |
-| `rdk-device-skills` | 26 | 板端诊断、内存审计、摄像头、模型部署/评测、GPIO、40PIN、TROS、无头模式、日志取证、网络远程、外设、LLM 部署、具身智能… | [D-Robotics/rdk-device-skills](https://github.com/D-Robotics/rdk-device-skills) |
-| `bsp-skills` | 8 | host 侧 BSP 开发：交叉编译环境、repo 源码同步、系统镜像、内核/DTB/驱动、deb 包、bootloader/miniboot、rootfs 定制、S 系列源码 | [D-Robotics/bsp-skills](https://github.com/D-Robotics/bsp-skills) |
-| `rdk-skills`（OE Hub） | 43 | X5 OE Mapper PTQ/QAT、S 系列 HBDK/UCP/Perfetto、板端性能与精度评估、模型编译部署 | [D-Robotics/rdk-skills](https://github.com/D-Robotics/rdk-skills) |
-
-> 技能按名字去重：设备包优先，外部配置目录覆盖内置。总数 77（截至最近一次同步，见 `skills/manifest.json`）。
-
-## 🔧 工作原理
+## Architecture
 
 ```mermaid
 flowchart LR
     A["rdk-device-skills<br/>26 skills"] --> P["rdk-skills Provider"]
     B["bsp-skills<br/>8 skills"] --> P
-    C["rdk-skills<br/>43 OE skills"] --> P
-    D["config.skillsDirs<br/>external dirs"] --> P
-    P --> R["Harness 技能注册表"]
-    R --> S["内置 skill 工具<br/>（加载技能正文）"]
-    P --> T["rdk_skills 工具<br/>（目录/搜索）"]
-    E["detect_rdk.sh"] --> F["rdk_board_detect 工具"]
+    C["oe-skills-x5<br/>22 skills"] --> P
+    D["oe-skills-s<br/>20 skills"] --> P
+    E["rdk-skills (hub)<br/>1 hub-native skill"] --> P
+    F["config.skillsDirs<br/>external directories"] --> P
+    P --> R["Harness skills registry"]
+    R --> S["built-in skill tool<br/>(loads skill bodies on demand)"]
+    P --> T["rdk_skills tool<br/>(catalog / search)"]
+    G["detect_rdk.sh"] --> U["rdk_board_detect"]
+    H["OE pack setup.sh"] --> V["rdk_oe_setup<br/>(workspace installer)"]
 ```
 
-- **Provider 懒加载**：注册表只拿名字和描述做路由；技能正文在模型真正加载时才从磁盘读取；
-- **不重复造轮子**：目录/搜索走原生注册表，板端命令执行交给 DSH 自带 bash/pwsh 工具；
-- **失败不编造**：检测脚本在非 RDK 主机上返回 `{ detected: false, reason }`。
+- **Lazy loading**: the registry only holds names and descriptions for routing; skill bodies are read from disk when the model actually loads a skill.
+- **No fabrication**: device detection returns `{ detected: false, reason }` on non-RDK hosts.
 
-## 🛠 工具
+## Tools
 
-### `rdk_skills` — 技能目录
+### `rdk_skills`
 
-| 参数 | 说明 |
-| --- | --- |
-| `query`（可选） | 精确技能名返回详情（路径 + 脚本清单）；关键词则按名称/描述/标签搜索 |
-| `refresh`（可选） | 强制重新扫描配置的目录（默认用缓存索引） |
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `query` | string (optional) | Exact skill name returns detail (path, scripts, tags); a keyword searches names, descriptions, and tags. |
+| `refresh` | bool (optional) | Force a rescan of the configured directories (defaults to the cached index). |
 
 ```text
 rdk_skills { query: "diagnostic" }
-→ matched: 7 / total: 77
-  rdk-diagnostic, rdk-log-forensics, rdk-docs-reference,
-  x5-accuracy-diagnostics, x5-consistency-diagnostics,
-  x5-model-diagnostics, x5-performance-diagnostics
+matched: 7 / total: 77
+rdk-diagnostic, rdk-log-forensics, rdk-docs-reference,
+x5-accuracy-diagnostics, x5-consistency-diagnostics,
+x5-model-diagnostics, x5-performance-diagnostics
 ```
 
-### `rdk_board_detect` — 板卡检测
+### `rdk_board_detect`
 
 ```text
 rdk_board_detect {}
-→ { "detected": true, "board": "rdk-x5", "soc": "sunrise-5",
-    "bpuArch": "bayes-e", "memGb": 4, "osVersion": "3.0.0", … }
-  # 非 RDK 主机：
-→ { "detected": false, "reason": "not-an-rdk-host: …" }
+→ { detected: true, board: "rdk-x5", soc: "sunrise-5",
+    bpuArch: "bayes-e", memGb: 4, osVersion: "3.0.0" }
+  # on a non-RDK host:
+→ { detected: false, reason: "not-an-rdk-host: ..." }
 ```
 
-## ⚙️ 配置
+### `rdk_oe_setup`
 
-在 profile 的 `cordis.patch.yml`（或 bundle 行）里覆盖默认值：
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `pack` | string | `oe-skills-x5` or `oe-skills-s` |
+| `projectRoot` | string | Absolute path of the project workspace to initialize. |
+| `source` | string (optional) | Git URL or local checkout path; defaults to the official repository. |
+
+This tool runs the **same `setup.sh`** as the upstream repos. For `oe-skills-x5` it lays down `.drobotics/` and injects the `# X5 Workspace Rules` routing block into the workspace `CLAUDE.md` (which DeepSeek Harness reads). For `oe-skills-s` it lays down `.horizon/` with the Horizon routing rules. The result is identical to a manual `git clone` + `bash setup.sh`.
+
+```text
+rdk_oe_setup { pack: "oe-skills-x5", projectRoot: "/home/user/my-project" }
+→ { ok: true, exitCode: 0, verified: { workspaceDir: ".drobotics",
+    version: "3.2.0", skills: 22 } }
+```
+
+## Workspace integration (OE packs)
+
+The OE packs (`oe-skills-x5` and `oe-skills-s`) are workspace-integrated: their skills read shared state from `.drobotics/` and `.horizon/` directories that `setup.sh` creates. The plugin supports two modes:
+
+- **Catalog mode** (default): the vendored SKILL.md files are registered as native skills. The agent can read instructions and scripts, but skills that depend on workspace state (environment detection, package installation) will report the missing layout and guide the user through `rdk_oe_setup`.
+- **Workspace mode**: run `rdk_oe_setup` once per pack to lay down the full workspace — shared resources, scripts, platform configs, and routing rules. After that the OE skills function exactly as they do in the upstream flow.
+
+Routing works through two independent mechanisms that reinforce each other:
+
+1. The **router skills** (`x5-router`, `horizon-router`) are registered in the harness catalog. When the agent loads them, they follow their internal routing tables (in `references/`) to dispatch to the correct sub-skill.
+2. The `setup.sh`-injected **routing rules** in `CLAUDE.md` are picked up by DeepSeek Harness as workspace instructions and take effect for every session of that workspace.
+
+## Configuration
+
+Override defaults in your profile's `cordis.patch.yml`:
 
 ```yaml
 - insert:
     - id: rdk-skills
       name: dsh-plugin-rdk
       config:
-        skillsDirs: []        # 额外技能目录，先于内置包扫描（同名覆盖内置）
-        includeOe: true       # 是否包含 OE / X5 / S 工具链技能
-        detectScript: null    # 自定义板卡检测脚本（默认用内置 detect_rdk.sh）
+        skillsDirs: []        # extra directories scanned first (win duplicates)
+        includeOe: true       # include the oe-skills-x5 / oe-skills-s packs
+        detectScript: null    # custom board-detection script
+        oeX5Source: null      # custom git URL or local path for oe-skills-x5
+        oeSSource: null       # custom git URL or local path for oe-skills-s
 ```
 
-| 字段 | 类型 | 默认 | 含义 |
+| Field | Type | Default | |
 | --- | --- | --- | --- |
-| `skillsDirs` | `string[]` | `[]` | 存放 `SKILL.md` 技能目录的外部目录列表 |
-| `includeOe` | `boolean` | `true` | `false` 时去掉 `rdk-skills` Hub 里的 OE/X5/S 技能（设备 + BSP 保留） |
-| `detectScript` | `string` | 内置脚本 | `rdk_board_detect` 执行的检测脚本 |
+| `skillsDirs` | `string[]` | `[]` | Extra directories of SKILL.md skill folders. |
+| `includeOe` | `boolean` | `true` | `false` drops the OE packs and skips their mirrors in the hub. |
+| `detectScript` | `string` | &mdash; | Script executed by `rdk_board_detect`. |
+| `oeX5Source` | `string` | &mdash; | Custom source for `rdk_oe_setup` when installing `oe-skills-x5`. |
+| `oeSSource` | `string` | &mdash; | Custom source for `rdk_oe_setup` when installing `oe-skills-s`. |
 
-## 🔄 保持技能最新
+## Keeping the catalog current
 
-内置技能是普通文件副本，插件**离线可用**。要跟上上游变化：
-
-```bash
-npm run sync    # 默认从本地 checkout 同步
-```
-
-或通过环境变量指定来源（路径或 git URL）：
+The vendored packs are plain file copies, so the plugin works offline. To pull in upstream changes:
 
 ```bash
-RDK_DEVICE_SKILLS_SOURCE=https://github.com/D-Robotics/rdk-device-skills.git \
-RDK_SKILLS_SOURCE=https://github.com/D-Robotics/rdk-skills.git \
-BSP_SKILLS_SOURCE=https://github.com/D-Robotics/bsp-skills.git \
 npm run sync
 ```
 
-仓库里的 GitHub Action 每周自动同步并开 PR；同步记录（来源 + commit）在 `skills/manifest.json`。
+Set environment variables to override the default sources (path or git URL):
 
-## 🧪 开发
+```bash
+OE_X5_SKILLS_SOURCE=https://github.com/D-Robotics/oe-skills-x5.git \
+OE_S_SKILLS_SOURCE=https://github.com/D-Robotics/oe-skills-s.git \
+npm run sync
+```
+
+A weekly GitHub Action opens a pull request when the upstream packs change. The sync manifest (`skills/manifest.json`) records the exact source and commit of every pack. Adding a new pack requires no code change: every directory under `skills/` is scanned as a skill pack automatically.
+
+## Development
 
 ```bash
 npm install
-npm run build   # tsc → dist/
-npm test        # 构建 + 11 个单测
-npm run sync    # 刷新内置技能
+npm run build    # tsc → dist/
+npm test         # build + 11 unit tests
+npm run sync     # refresh vendored skills
 ```
 
-目录结构：
-
-```text
+```
 dsh-plugin-rdk/
-├── cordis.patch.yml       # bundle 补丁层（插件行）
-├── src/                   # 插件源码：provider / 工具 / frontmatter / 检测
-├── skills/                # vendored 技能包（sync 产物）
+├── cordis.patch.yml        # bundle patch layer
+├── src/                    # provider / tools / frontmatter / device detection / OE setup
+├── skills/                 # vendored skill packs (sync output)
 ├── scripts/sync-skills.mjs
-└── .github/workflows/     # 测试 + 每周技能同步
+└── .github/workflows/      # test + weekly sync
 ```
 
-## 📄 许可证
+## License
 
-- 插件代码：**Apache-2.0**（见 [LICENSE](LICENSE)）
-- 内置技能内容：**Apache-2.0 AND CC-BY-4.0**，版权归 D-Robotics（见 [NOTICE.md](NOTICE.md) 及各包的 `LICENSE*`）
-- 本项目不是 D-Robotics 官方产品。
+Plugin code: **Apache-2.0** ([LICENSE](LICENSE)). Vendored skill content: **Apache-2.0 AND CC-BY-4.0**, &copy; D-Robotics. See [NOTICE.md](NOTICE.md) and the per-pack `LICENSE*` files for attribution. This project is not an official D-Robotics product.
 
-## 🔗 生态链接
+## Links
 
-- 🧭 [D-Robotics/rdk-skills](https://github.com/D-Robotics/rdk-skills) —— 官方技能 Hub（含 [`.dsh-plugin/marketplace.json`](https://github.com/D-Robotics/rdk-skills/blob/main/.dsh-plugin/marketplace.json) 入口）
-- 🌐 [GitHub topic: dsh-plugin](https://github.com/topics/dsh-plugin)
-- 🧰 [DeepSeek Harness 插件开发文档](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)
+- [D-Robotics/rdk-skills](https://github.com/D-Robotics/rdk-skills) &mdash; official skill hub (includes the [`.dsh-plugin/marketplace.json`](https://github.com/D-Robotics/rdk-skills/blob/main/.dsh-plugin/marketplace.json) entry)
+- [GitHub topic: dsh-plugin](https://github.com/topics/dsh-plugin)
+- [DeepSeek Harness plugin development docs](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)

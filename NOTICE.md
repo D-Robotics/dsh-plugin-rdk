@@ -18,6 +18,10 @@ RDK skill packs:
   <https://github.com/D-Robotics/rdk-skills>
 - `skills/bsp-skills/` — from
   <https://github.com/D-Robotics/bsp-skills>
+- `skills/oe-skills-x5/` — from
+  <https://github.com/D-Robotics/oe-skills-x5>
+- `skills/oe-skills-s/` — from
+  <https://github.com/D-Robotics/oe-skills-s>
 
 Skill content is Copyright (c) D-Robotics and its contributors and is
 distributed under the Apache-2.0 and CC-BY-4.0 licenses of the upstream

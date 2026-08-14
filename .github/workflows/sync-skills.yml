@@ -21,6 +21,8 @@ jobs:
           RDK_DEVICE_SKILLS_SOURCE: https://github.com/D-Robotics/rdk-device-skills.git
           RDK_SKILLS_SOURCE: https://github.com/D-Robotics/rdk-skills.git
           BSP_SKILLS_SOURCE: https://github.com/D-Robotics/bsp-skills.git
+          OE_X5_SKILLS_SOURCE: https://github.com/D-Robotics/oe-skills-x5.git
+          OE_S_SKILLS_SOURCE: https://github.com/D-Robotics/oe-skills-s.git
         run: node scripts/sync-skills.mjs
       - name: Create pull request when the vendor tree changed
         uses: peter-evans/create-pull-request@v7
