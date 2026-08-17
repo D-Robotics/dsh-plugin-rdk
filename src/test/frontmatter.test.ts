@@ -45,7 +45,7 @@ test('rejects missing, malformed or invalid frontmatter', () => {
   assert.equal(parseSkillMarkdown('---\nname: ok\ndescription: x\n---\n')?.body, '') // empty body is allowed
 })
 
-test('falls back to lenient parsing for loose YAML (unquoted ": " in description)', () => {
+test('handles loose YAML (unquoted ": " in description)', () => {
   const md = [
     '---',
     'name: rdk-hardware',
@@ -66,12 +66,15 @@ test('falls back to lenient parsing for loose YAML (unquoted ": " in description
   assert.equal(parsed.body, '# Hardware')
 })
 
-test('validates kebab-case skill names', () => {
+test('validates skill names', () => {
   assert.equal(isSkillName('rdk-diagnostic'), true)
   assert.equal(isSkillName('x5-ptq-compile'), true)
   assert.equal(isSkillName('j6-ucp-hbm-infer'), true)
-  assert.equal(isSkillName('Bad'), false)
-  assert.equal(isSkillName('under_score'), false)
+  assert.equal(isSkillName('__SKILL_j6-plugin-__adaptation'), true)
+  assert.equal(isSkillName('Bad Name'), false)
+  // underscore is allowed (OE __SKILL_ convention)
+  assert.equal(isSkillName('under_score'), true)
+  // trailing dash is rejected
   assert.equal(isSkillName('dash-'), false)
   assert.equal(isSkillName(''), false)
 })

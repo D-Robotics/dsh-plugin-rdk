@@ -10,9 +10,14 @@ export const Config = Schema.object({
     oeSSource: Schema.string(),
 });
 export function apply(ctx, config) {
+    // Declare hard dependencies so Cordis waits for these services and
+    // re-activates the plugin when they appear — instead of silently
+    // doing nothing because they happened to not be ready yet.
     const skills = ctx.get('skills');
     const tools = ctx.get('tools');
     if (skills === undefined || tools === undefined) {
+        // Services not yet available; Cordis will re-invoke apply when they appear
+        // because we declare them in inject below.
         return;
     }
     const handle = mountRdkSkills(skills, {
@@ -25,6 +30,9 @@ export function apply(ctx, config) {
         oeSSource: config.oeSSource,
     });
 }
+// Declare hard dependencies so Cordis re-activates the plugin when the
+// services become available (e.g. after a dynamic reload).
+export const inject = ['skills', 'tools'];
 export { parseDetectOutput, runDeviceDetect } from './device-detect.js';
 export { runOeSetup, OE_PACKS } from './oe-setup.js';
 export { mountRdkSkills, PROVIDER_NAME } from './skill-provider.js';

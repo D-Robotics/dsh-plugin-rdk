@@ -153,11 +153,20 @@ export function mountRdkSkills(skills, options) {
     let scanPromise = null;
     const scanAll = (force) => {
         if (force) {
-            index.skills = [];
-            index.byName = new Map();
-            index.stats = { roots: [], errors: [] };
-            index.scannedAt = null;
-            scanPromise = null;
+            // Drain the in-flight scan, then clear and rescan.
+            // Replace scanPromise immediately so concurrent non-force callers
+            // attach to this chain instead of the old scan.
+            const drain = scanPromise !== null ? scanPromise.catch(() => { }) : Promise.resolve();
+            scanPromise = drain.then(() => {
+                index.skills = [];
+                index.byName = new Map();
+                index.stats = { roots: [], errors: [] };
+                index.scannedAt = null;
+                return scan(options, index);
+            }).finally(() => {
+                scanPromise = null;
+            });
+            return scanPromise.then(() => index);
         }
         if (index.scannedAt !== null)
             return Promise.resolve(index);

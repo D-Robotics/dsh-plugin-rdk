@@ -11,10 +11,35 @@ import type { RdkSkillsHandle } from './skill-provider.js'
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
-/** JSON round-trip mirrors the harness cloneJson semantics: plain data only, undefined fields dropped. */
-const toJson = (value: unknown): JsonValue => JSON.parse(JSON.stringify(value)) as JsonValue
+/**
+ * Safe JSON serialization: wraps JSON.stringify in a try/catch so a single
+ * non-serializable value (BigInt, circular reference, etc.) cannot crash the
+ * entire tool-execution pipeline and take down every other tool in the harness.
+ * Returns a structured error object on failure instead of throwing.
+ */
+const toJson = (value: unknown): JsonValue => {
+  try {
+    return JSON.parse(JSON.stringify(value)) as JsonValue
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return {
+      error: 'toJson: failed to serialize tool result',
+      reason: message,
+      // Include a safe subset so the caller still has context.
+      ...(typeof value === 'object' && value !== null
+        ? { kind: (value as Record<string, unknown>).constructor?.name ?? typeof value }
+        : {}),
+    }
+  }
+}
 
-/** The part of the DSH tools registry this plugin consumes. */
+const safeRender = (_args: unknown, value: unknown): { type: 'text'; text: string }[] => {
+  try {
+    return [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }]
+  } catch {
+    return [{ type: 'text' as const, text: `[unserializable result: ${typeof value}]` }]
+  }
+}
 export interface ToolsRegistryView {
   register(definition: ToolDefinition): () => void
 }
@@ -46,33 +71,40 @@ export function registerTools(tools: ToolsRegistryView, handle: RdkSkillsHandle,
     },
     output: {
       schema: { type: 'json' },
-      render: (_args, value) => [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
+      render: safeRender,
     },
     async execute(args) {
-      await handle.scanAll(args.refresh === true)
-      const raw = typeof args.query === 'string' ? args.query.trim() : ''
-      if (raw === '') return toJson(await handle.summary())
-      const detail = await handle.detail(raw)
-      if (!('error' in detail)) return toJson(detail)
-      const idx = await handle.scanAll(false)
-      const q = raw.toLowerCase()
-      const matches = idx.skills.filter((skill) => {
-        const hay = `${skill.name} ${skill.description} ${skill.tags.join(' ')}`.toLowerCase()
-        return hay.includes(q)
-      })
-      return toJson({
-        query: raw,
-        matched: matches.length,
-        total: idx.skills.length,
-        skills: matches.map((skill) => ({
-          name: skill.name,
-          description: skill.description,
-          pack: skill.pack,
-          ...(skill.version !== undefined ? { version: skill.version } : {}),
-          ...(skill.tags.length > 0 ? { tags: skill.tags } : {}),
-          dir: skill.dir,
-        })),
-      })
+      try {
+        await handle.scanAll(args.refresh === true)
+        const raw = typeof args.query === 'string' ? args.query.trim() : ''
+        if (raw === '') return toJson(await handle.summary())
+        const detail = await handle.detail(raw)
+        if (!('error' in detail)) return toJson(detail)
+        const idx = await handle.scanAll(false)
+        const q = raw.toLowerCase()
+        const matches = idx.skills.filter((skill) => {
+          const hay = `${skill.name} ${skill.description} ${skill.tags.join(' ')}`.toLowerCase()
+          return hay.includes(q)
+        })
+        return toJson({
+          query: raw,
+          matched: matches.length,
+          total: idx.skills.length,
+          skills: matches.map((skill) => ({
+            name: skill.name,
+            description: skill.description,
+            pack: skill.pack,
+            ...(skill.version !== undefined ? { version: skill.version } : {}),
+            ...(skill.tags.length > 0 ? { tags: skill.tags } : {}),
+            dir: skill.dir,
+          })),
+        })
+      } catch (error) {
+        return toJson({
+          error: 'rdk_skills: unexpected error',
+          reason: error instanceof Error ? error.message : String(error),
+        })
+      }
     },
   }))
 
@@ -83,10 +115,18 @@ export function registerTools(tools: ToolsRegistryView, handle: RdkSkillsHandle,
     parameters: {},
     output: {
       schema: { type: 'json' },
-      render: (_args, value) => [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
+      render: safeRender,
     },
     async execute() {
-      return toJson(await runDeviceDetect(detectScript))
+      try {
+        return toJson(await runDeviceDetect(detectScript))
+      } catch (error) {
+        return toJson({
+          detected: false,
+          error: 'rdk_board_detect: unexpected error',
+          reason: error instanceof Error ? error.message : String(error),
+        })
+      }
     },
   }))
 
@@ -113,14 +153,22 @@ export function registerTools(tools: ToolsRegistryView, handle: RdkSkillsHandle,
     },
     output: {
       schema: { type: 'json' },
-      render: (_args, value) => [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
+      render: safeRender,
     },
     async execute(args) {
-      return toJson(await runOeSetup({
-        pack: args.pack,
-        projectRoot: args.projectRoot,
-        source: args.source ?? (args.pack === 'oe-skills-x5' ? oeX5Source : oeSSource),
-      }))
+      try {
+        return toJson(await runOeSetup({
+          pack: args.pack,
+          projectRoot: args.projectRoot,
+          source: args.source ?? (args.pack === 'oe-skills-x5' ? oeX5Source : oeSSource),
+        }))
+      } catch (error) {
+        return toJson({
+          ok: false,
+          error: 'rdk_oe_setup: unexpected error',
+          reason: error instanceof Error ? error.message : String(error),
+        })
+      }
     },
   }))
 }
