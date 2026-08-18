@@ -36,15 +36,14 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config): void {
-  // Declare hard dependencies so Cordis waits for these services and
-  // re-activates the plugin when they appear — instead of silently
-  // doing nothing because they happened to not be ready yet.
+  // Use ctx.get() for optional services and stay inert when they are absent.
+  // Do NOT declare `inject`: real Cordis parks a plugin whose inject cannot
+  // resolve, which blocks the whole include entry and hangs the boot.
   const skills = ctx.get('skills') as SkillsRegistryView | undefined
   const tools = ctx.get('tools') as ToolsRegistryView | undefined
 
   if (skills === undefined || tools === undefined) {
-    // Services not yet available; Cordis will re-invoke apply when they appear
-    // because we declare them in inject below.
+    ctx.logger?.warn?.('dsh-plugin-rdk: skills/tools service unavailable; RDK skills were not registered')
     return
   }
 
@@ -58,10 +57,6 @@ export function apply(ctx: Context, config: Config): void {
     oeSSource: config.oeSSource,
   })
 }
-
-// Declare hard dependencies so Cordis re-activates the plugin when the
-// services become available (e.g. after a dynamic reload).
-export const inject = ['skills', 'tools']
 
 export { parseDetectOutput, runDeviceDetect } from './device-detect.js'
 export { runOeSetup, OE_PACKS } from './oe-setup.js'
