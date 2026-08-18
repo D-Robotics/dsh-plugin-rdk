@@ -11,10 +11,13 @@
  * `: ` or `#` characters.  The regex approach is battle-tested against every
  * vendored SKILL.md (77+ skills across 5 packs) and never drops a valid skill.
  */
-/** Skill-name grammar: kebab-case (e.g. rdk-diagnostic) or the OE
- *  __SKILL_ prefix convention (e.g. __SKILL_j6-plugin-__adaptation). */
+/** Skill-name grammar: strictly kebab-case, matching the DSH registry's own
+ *  `SKILL_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/`. Names that do not conform
+ *  (e.g. the OE packs' `__SKILL_...` routing internals) must be dropped here,
+ *  otherwise the registry throws `invalid skill name` and rejects the whole
+ *  provider. */
 export function isSkillName(name) {
-    return typeof name === 'string' && /^[a-zA-Z0-9_]+(-[a-zA-Z0-9_]+)*$/.test(name);
+    return typeof name === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name);
 }
 const unquote = (value) => {
     let v = value;

@@ -66,14 +66,17 @@ test('handles loose YAML (unquoted ": " in description)', () => {
   assert.equal(parsed.body, '# Hardware')
 })
 
-test('validates skill names', () => {
+test('validates skill names (strict kebab-case, matching DSH registry)', () => {
   assert.equal(isSkillName('rdk-diagnostic'), true)
   assert.equal(isSkillName('x5-ptq-compile'), true)
   assert.equal(isSkillName('j6-ucp-hbm-infer'), true)
-  assert.equal(isSkillName('__SKILL_j6-plugin-__adaptation'), true)
+  // OE routing-internal names must be rejected so the registry does not throw
+  assert.equal(isSkillName('__SKILL_j6-plugin-__adaptation'), false)
   assert.equal(isSkillName('Bad Name'), false)
-  // underscore is allowed (OE __SKILL_ convention)
-  assert.equal(isSkillName('under_score'), true)
+  // underscore is NOT allowed by the DSH registry
+  assert.equal(isSkillName('under_score'), false)
+  // uppercase is NOT allowed
+  assert.equal(isSkillName('Bad'), false)
   // trailing dash is rejected
   assert.equal(isSkillName('dash-'), false)
   assert.equal(isSkillName(''), false)
