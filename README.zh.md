@@ -25,7 +25,7 @@
 
 `dsh-plugin-rdk` 是一个 [DeepSeek Harness bundle 插件](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)，将 D-Robotics RDK 技能生态原生接入 harness。它把五个内置技能包注册进 harness 技能注册表，提供浏览目录和检测硬件的模型工具，并且能以与官方仓库完全一致的 `setup.sh` 流程将 OpenExplorer（OE）工具链包安装到项目工作区。
 
-五个技能包，截至 `b0fb913` 同步：
+五个技能包（各包的精确来源与 commit 见 `skills/manifest.json`）：
 
 | 包 | 数量 | 内容 |
 | --- | --- | --- |

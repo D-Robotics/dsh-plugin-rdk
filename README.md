@@ -25,7 +25,7 @@
 
 `dsh-plugin-rdk` is a [DeepSeek Harness bundle plugin](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md) that adapts the D-Robotics RDK skill ecosystem into the harness natively. It registers five vendored skill packs into the harness skills registry, provides model-facing tools for browsing the catalog and detecting RDK hardware, and can install the OpenExplorer (OE) toolchain packs into a project workspace with the same `setup.sh` flow as the official repositories.
 
-The five skill packs, last synced at commit `b0fb913`:
+The five skill packs (see `skills/manifest.json` for the exact source and commit of each):
 
 | Pack | Count | Contents |
 | --- | --- | --- |

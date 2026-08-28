@@ -31,8 +31,10 @@ jobs:
           branch: chore/sync-skills
           title: 'chore(skills): sync vendored RDK skill packs'
           body: |
-            Automated weekly sync of `skills/rdk-device-skills` and
-            `skills/rdk-skills` from the upstream repositories.
+            Automated weekly sync of the five vendored skill packs
+            (`rdk-device-skills`, `bsp-skills`, `oe-skills-x5`,
+            `oe-skills-s`, and the `rdk-skills` hub native skill) from
+            the upstream repositories.
 
             See `skills/manifest.json` for the exact source commits.
           delete-branch: true

@@ -6,7 +6,6 @@
  */
 import { type ToolDefinition } from '@deepseek-ai/dsh-tools';
 import type { RdkSkillsHandle } from './skill-provider.js';
-/** The part of the DSH tools registry this plugin consumes. */
 export interface ToolsRegistryView {
     register(definition: ToolDefinition): () => void;
 }

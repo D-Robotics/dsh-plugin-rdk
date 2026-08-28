@@ -41,7 +41,7 @@ test('rejects missing, malformed or invalid frontmatter', () => {
     assert.equal(parseSkillMarkdown('---\nname: ok\ndescription: x\n'), undefined); // no closing fence
     assert.equal(parseSkillMarkdown('---\nname: ok\ndescription: x\n---\n')?.body, ''); // empty body is allowed
 });
-test('falls back to lenient parsing for loose YAML (unquoted ": " in description)', () => {
+test('handles loose YAML (unquoted ": " in description)', () => {
     const md = [
         '---',
         'name: rdk-hardware',
