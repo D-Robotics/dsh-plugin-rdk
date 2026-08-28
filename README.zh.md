@@ -40,7 +40,15 @@
 ## 安装
 
 ```bash
+# 从 npm registry 安装（发布后可用）
 dsh plugin --profile rdk add dsh-plugin-rdk
+
+# 或直接从本仓库安装（npm 尚未发布时可用）
+dsh plugin --profile rdk add github:D-Robotics/dsh-plugin-rdk
+
+# 或从本地检出安装
+dsh plugin --profile rdk add file:/path/to/dsh-plugin-rdk
+
 dsh --profile rdk
 ```
 

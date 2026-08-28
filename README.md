@@ -40,7 +40,15 @@ Duplicate names are resolved by scan order: device pack first, then BSP, then th
 ## Installation
 
 ```bash
+# from the npm registry (once published)
 dsh plugin --profile rdk add dsh-plugin-rdk
+
+# or directly from this repository (works before an npm release exists)
+dsh plugin --profile rdk add github:D-Robotics/dsh-plugin-rdk
+
+# or from a local checkout
+dsh plugin --profile rdk add file:/path/to/dsh-plugin-rdk
+
 dsh --profile rdk
 ```
 
