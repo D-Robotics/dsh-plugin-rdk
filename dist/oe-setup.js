@@ -30,7 +30,33 @@ export const OE_PACKS = {
 };
 const cacheRoot = () => join(tmpdir(), 'dsh-plugin-rdk');
 const isGitUrl = (value) => /^(https?:\/\/|git@|ssh:\/\/|git:\/\/)/.test(value);
-const runGit = (args, cwd) => execFileAsync('git', args, { cwd, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 });
+const runGit = (args, cwd, timeoutMs = 120_000) => execFileAsync('git', args, { cwd, timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024 });
+/**
+ * Convert an https:// github URL to its ssh://git@github.com/ form so a
+ * clone can survive hosts where HTTPS to github.com is slow or blocked
+ * (common behind CN networks / corporate proxies) while SSH works.
+ */
+export const sshMirror = (url) => {
+    const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/.exec(url);
+    if (match === null)
+        return undefined;
+    return `git@github.com:${match[1]}/${match[2]}.git`;
+};
+/** Clone a repo, trying the given URL first and the SSH mirror on failure. */
+async function cloneWithFallback(source, dest) {
+    const mirror = sshMirror(source);
+    try {
+        await runGit(['clone', '--depth', '1', source, dest]);
+        return;
+    }
+    catch (error) {
+        if (mirror === undefined)
+            throw error;
+        console.warn(`[dsh-plugin-rdk] https clone failed (${error.message.slice(0, 120)}); retrying via ${mirror}`);
+        rmSync(dest, { recursive: true, force: true });
+        await runGit(['clone', '--depth', '1', mirror, dest]);
+    }
+}
 /** Resolve the pack repository: a local checkout is used as-is; a git URL is cached in the OS temp dir. */
 async function acquireRepo(info, source) {
     if (!isGitUrl(source)) {
@@ -51,7 +77,7 @@ async function acquireRepo(info, source) {
     }
     mkdirSync(cacheRoot(), { recursive: true });
     rmSync(dir, { recursive: true, force: true });
-    await runGit(['clone', '--depth', '1', source, dir]);
+    await cloneWithFallback(source, dir);
     return { dir, used: source };
 }
 function countSkills(workspaceRoot) {

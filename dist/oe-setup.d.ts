@@ -26,6 +26,12 @@ export interface OeSetupResult {
     };
 }
 /**
+ * Convert an https:// github URL to its ssh://git@github.com/ form so a
+ * clone can survive hosts where HTTPS to github.com is slow or blocked
+ * (common behind CN networks / corporate proxies) while SSH works.
+ */
+export declare const sshMirror: (url: string) => string | undefined;
+/**
  * Run the pack's own setup.sh against a project root — the exact install
  * flow of the upstream repository — and verify the laid-down workspace.
  */

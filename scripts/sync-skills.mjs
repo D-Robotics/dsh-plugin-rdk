@@ -67,9 +67,25 @@ const HUB_NATIVE_TOP_LEVEL = ['d-robotics-pack-installer']
 
 const isGitUrl = (value) => /^(https?:\/\/|git@|ssh:\/\/|git:\/\/)/.test(value)
 
+/** Convert an https:// github URL to its ssh://git@github.com/ form. */
+function sshMirror(url) {
+  const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/.exec(url)
+  if (match === null) return undefined
+  return `git@github.com:${match[1]}/${match[2]}.git`
+}
+
 function gitClone(url, dest) {
   rmSync(dest, { recursive: true, force: true })
-  execFileSync('git', ['clone', '--depth', '1', url, dest], { stdio: 'inherit' })
+  try {
+    execFileSync('git', ['clone', '--depth', '1', url, dest], { stdio: 'inherit', timeout: 180_000 })
+    return
+  } catch (error) {
+    const mirror = sshMirror(url)
+    if (mirror === undefined) throw error
+    console.warn(`[sync] https clone failed; retrying via ${mirror}`)
+    rmSync(dest, { recursive: true, force: true })
+    execFileSync('git', ['clone', '--depth', '1', mirror, dest], { stdio: 'inherit', timeout: 180_000 })
+  }
 }
 
 function gitHead(path) {
