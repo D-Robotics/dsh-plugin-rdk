@@ -1,34 +1,34 @@
 {
-  "generatedAt": "2026-08-28T03:52:09.520Z",
+  "generatedAt": "2026-09-21T08:55:25.554Z",
   "packs": [
     {
       "pack": "rdk-device-skills",
       "source": "https://github.com/D-Robotics/rdk-device-skills.git",
-      "commit": "4c7e245f9f1cc36e3954630158112e09246d5cc9",
+      "commit": "57c7100fa28be5b00497bfb950eea6208afb5906",
       "topLevelEntries": 29
     },
     {
       "pack": "rdk-skills",
       "source": "https://github.com/D-Robotics/rdk-skills.git",
-      "commit": "cfb88a7f6c420af5ed86e6f445f4b207f7f1042b",
-      "topLevelEntries": 4
+      "commit": "08d0a466413f11bbc045ba5e51f626bdb0346373",
+      "topLevelEntries": 3
     },
     {
       "pack": "bsp-skills",
       "source": "https://github.com/D-Robotics/bsp-skills.git",
-      "commit": "fdd46294570619de941b6b0b8ad7d34f10ef4c52",
+      "commit": "0b3b572dd40891323f654ab610f2c9882ce2569b",
       "topLevelEntries": 11
     },
     {
       "pack": "oe-skills-x5",
       "source": "https://github.com/D-Robotics/oe-skills-x5.git",
-      "commit": "27718beb220764aaf80dbc9f6812642e1131c192",
+      "commit": "ea44cd2d44cd14da7cc93f247ec6029afa8264c9",
       "topLevelEntries": 24
     },
     {
       "pack": "oe-skills-s",
       "source": "https://github.com/D-Robotics/oe-skills-s.git",
-      "commit": "bb0905899d69a35f8179f6cf8dd343ffdd94d5c6",
+      "commit": "e4619458c71e0be7bd76420811ef0bf94ae491e1",
       "topLevelEntries": 7
     }
   ]

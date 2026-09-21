@@ -1,7 +1,7 @@
 ---
 name: rdk-log-forensics
 description: Read-only crash and log forensics for D-Robotics RDK devices — extract kernel errors from dmesg, list failed systemd units, detect coredumps and abnormal reboots, and summarize evidence for root-cause analysis. Use when a program crashed, the board rebooted or froze unexpectedly, a service will not start, or the user pastes an error asking what the logs say. Triggers include 崩溃, 死机, 自动重启, 突然重启, 段错误, Segmentation fault, coredump, 内核报错, dmesg 报错, journalctl, 服务起不来, 起不来了, 开机失败, oops. Do not use for live performance snapshots (rdk-diagnostic), memory measurement (rdk-memory-audit), or apt/disk maintenance (rdk-system-maintain).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team
@@ -25,7 +25,7 @@ metadata:
 
 把散落在 dmesg / journalctl / /var/crash 里的异常信号收敛成一份结构化清单
 （错误计数、失败单元、最近异常原文摘录），让 Agent 基于证据归因，
-并为 rdk-perf-investigator 等编排 Agent 提供第四类证据源（前三类：快照、
+并为上层诊断编排提供第四类证据源（前三类：快照、
 内存审计、模型基准）。
 
 ## When to use
